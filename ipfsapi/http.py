@@ -11,6 +11,7 @@ import contextlib
 import functools
 import re
 import tarfile
+import collections
 from six.moves import http_client
 
 import requests
@@ -18,6 +19,15 @@ import six
 
 from . import encoding
 from . import exceptions
+
+
+def deep_update(d, u):
+    for k, v in u.items():
+        if isinstance(v, collections.Mapping):
+            d[k] = deep_update(d.get(k, {}), v)
+        else:
+            d[k] = v
+    return d
 
 
 def pass_defaults(func):
@@ -33,8 +43,8 @@ def pass_defaults(func):
     @functools.wraps(func)
     def wrapper(self, *args, **kwargs):
         merged = {}
-        merged.update(self.defaults)
-        merged.update(kwargs)
+        merged = deep_update(merged, self.defaults)
+        merged = deep_update(merged, kwargs)
         return func(self, *args, **merged)
     return wrapper
 
